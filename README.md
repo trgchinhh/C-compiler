@@ -1,6 +1,6 @@
 # C-compiler
 
-Chương trình này là công cụ biên dịch nhiều file.cpp trong thư mục `src`, biên dịch nhanh và tiện lợi không cần phải nhớ lệnh hay gõ tay nhiều lần. Công cụ này giống như Makefile nhưng nó cơ bản và dễ dùng hơn. Tiện cho người chưa tiếp xúc với Makefile. Công cụ có những điểm hay như cho biết thông tin trình dịch, nếu file có thay đổi mới biên dịch còn không thay đổi thì cho chạy thẳng file thực thi, không biên dịch lại tránh mất thời gian 
+Chương trình này là công cụ biên dịch nhiều file.cpp trong thư mục `src`, biên dịch nhanh và tiện lợi không cần phải nhớ lệnh hay gõ tay nhiều lần. Công cụ này giống như Makefile nhưng nó cơ bản và dễ dùng hơn. Tiện cho người chưa tiếp xúc với Makefile. Công cụ có những điểm hay như cho biết thông tin trình dịch, nếu file có thay đổi mới biên dịch còn không thay đổi thì cho chạy thẳng file thực thi, không biên dịch lại tránh mất thời gian. Công cụ hỗ trợ trình biên dịch Gcc và Clang trên hệ điều hành Windows và Linux
 
 ![Demo ảnh](img/demo.png)
 

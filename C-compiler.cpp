@@ -163,20 +163,14 @@ bool ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
         }
     }
     string lenhbiendich = "";
-    #ifdef _MSC_VER
-        lenhbiendich = "cl ";
-    #elif __GNUC__
+    #if __GNUC__
         lenhbiendich = "g++ ";
     #elif __clang__
         lenhbiendich = "clang++ ";
     #endif
     //lenhbiendich += thumuc_chuacodemacdinh + "\\*.cpp ";
-    lenhbiendich += LayDanhSachFileCpp();
-    #ifdef _MSC_VER
-        lenhbiendich += "/FE ";
-    #else
-        lenhbiendich += "-o ";
-    #endif
+    lenhbiendich += LayDanhSachFileCpp();    
+    lenhbiendich += "-o ";
     #ifdef __WIN32 
         tenfileexe = tenfileexe + ".exe";
     #endif
@@ -187,18 +181,7 @@ bool ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
         return false;  
     }
     if (cpp_val > cppvs[4].value) cpp_name = "C++ mới hơn C++20";
-    #ifdef _MSC_VER
-             cout << "\t │    ├ " << RESET << YELLOW << "(+)" 
-                  << " Trình biên dịch: " << RESET << "MSVC" << endl;
-             cout << "\t └─(*)├ " << RESET << YELLOW << "(+)" 
-                  << " Phiên bản: " << RESET << _MSC_VER << endl;
-             cout << "\t      ├ " << RESET << YELLOW << "(+)" 
-                  << " Bản chuẩn: " << RESET << cpp_name << " (" << cpp_val << ")" << endl;
-             cout << "\t      └──────────────────────────────────┘" << endl;
-        if(!KiemTraKetQuaBienDich(lenhbiendich)){
-            return false;
-        }
-    #elif __GNUC__
+    #if __GNUC__
              cout << "\t │    ├ " << RESET << YELLOW << "(+)" << " Trình biên dịch: " 
                   << RESET << "GCC / MinGW" << endl;
              cout << "\t └─(*)├ " << RESET << YELLOW << "(+)" << " Phiên bản: " 
