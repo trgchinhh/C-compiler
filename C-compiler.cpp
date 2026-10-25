@@ -145,6 +145,16 @@ void ChayChuongTrinh(string tenfileexe, string duongdanfileexe){
     system(duongdanfileexe.c_str()); 
 }
 
+string LayDanhSachFileCpp() {
+    string danhsach;
+    for (const auto& file : recursive_directory_iterator(thumuc_chuacodemacdinh)) {
+        if (file.is_regular_file() && file.path().extension() == ".cpp") {
+            danhsach += "\"" + file.path().string() + "\" ";
+        }
+    }
+    return danhsach;
+}
+
 bool ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
     cout << "\t(-)" << " Đang biên dịch chương trình! Vui lòng chờ ...";
     cout << "\n\t │\n";
@@ -176,7 +186,8 @@ bool ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
     #elif __clang__
         lenhbiendich = "clang++ ";
     #endif
-    lenhbiendich += thumuc_chuacodemacdinh + "\\*.cpp ";
+    //lenhbiendich += thumuc_chuacodemacdinh + "\\*.cpp ";
+    lenhbiendich += LayDanhSachFileCpp();
     #ifdef _MSC_VER
         lenhbiendich += "/FE ";
     #else
