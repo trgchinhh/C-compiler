@@ -50,23 +50,6 @@ const string ten_fileexemacdinh = "main";
 string duongdan_fileexe = thumuc_chuafileexemacdinh + "\\"; 
 atomic<bool> batdauspinner(false);
 
-int LayChieuRongTerminal(){
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    int chieurong;
-    if(GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi)){
-        chieurong = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-    }
-    return chieurong;
-}
-
-void InGiuaTerminal(const string& line, string color) {
-    int chieu_rong = LayChieuRongTerminal();  
-    int do_dai = line.length();
-    int khoang_trang = (chieu_rong - do_dai) / 2;
-    if (khoang_trang < 0) khoang_trang = 0;
-    cout << string(khoang_trang, ' ') << line;
-}
-
 void InBanner(){
     string banner = R"(
    _____       _____                     _ _           
@@ -78,14 +61,7 @@ void InBanner(){
                                   | |                  
                                   |_|                  
     )";
-    stringstream ss(banner);
-    string line;
-    // cout << endl;
-    while (getline(ss, line)) {
-        InGiuaTerminal(line, RESET);
-        cout << endl;
-        Sleep(0);
-    }
+    cout << banner << endl;
 }
 
 void NhapTenFileExe(string& tenfileexe){
@@ -390,8 +366,10 @@ int main(){
     system("cls");
     AnConTroChuot(false);
 
+    #ifdef __WIN32
     SetConsoleOutputCP(65001); 
     SetConsoleCP(65001);
+    #endif
 
     string tenfileexe = "";
 
