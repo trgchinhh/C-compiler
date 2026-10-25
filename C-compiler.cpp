@@ -389,7 +389,7 @@ int main(){
             tenfileexe = ten_fileexemacdinh;
         }
     }
-    duongdan_fileexe = thumuc_chuafileexemacdinh + "\\" + tenfileexe;
+    duongdan_fileexe = thumuc_chuafileexemacdinh + "/" + tenfileexe;
     #ifdef __WIN32
         duongdan_fileexe += ".exe";
     #endif 
