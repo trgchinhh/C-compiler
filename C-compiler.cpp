@@ -116,8 +116,16 @@ bool KiemTraKetQuaBienDich(string lenhbiendich){
     return true;
 }
 
+void XoaManHinh(){
+    #ifdef _WIN32 
+        system("cls");
+    #else 
+        system("clear");
+    #endif
+}
+
 void ChayChuongTrinh(string tenfileexe, string duongdanfileexe){
-    system("cls");
+    XoaManHinh();
     system(duongdanfileexe.c_str()); 
 }
 
@@ -172,8 +180,8 @@ bool ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
     #ifdef __WIN32 
         tenfileexe = tenfileexe + ".exe";
     #endif
-    lenhbiendich += thumuc_chuafileexemacdinh + "\\" + tenfileexe;
-    string duongdanfileexe = thumuc_chuafileexemacdinh + "\\" + tenfileexe; 
+    lenhbiendich += thumuc_chuafileexemacdinh + "/" + tenfileexe;
+    string duongdanfileexe = thumuc_chuafileexemacdinh + "/" + tenfileexe; 
     if (cpp_val <= cppvs[0].value) {
         cout << RED << "(!) Trình biên dịch quá cũ, yêu cầu C++11 trở lên!" << RESET << endl;
         return false;  
@@ -222,14 +230,6 @@ bool ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
     //     ChayChuongTrinh(tenfileexe, duongdanfileexe);
     // }
     return true;
-}
-
-void XoaManHinh(){
-    #ifdef _WIN32 
-        system("cls");
-    #else 
-        system("clear");
-    #endif
 }
 
 void AnConTroChuot(bool trangthaicontrochuot){
@@ -363,7 +363,7 @@ void Menu(string tenfileexe, string duongdanfileexe){
 }
 
 int main(){
-    system("cls");
+    XoaManHinh();
     AnConTroChuot(false);
 
     #ifdef __WIN32
