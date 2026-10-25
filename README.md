@@ -1,3 +1,21 @@
+<p align="center">
+  <img height="100" src="img/logo.png"/>
+</p>
+
+<p align="center">
+  <a href="https://github.com/trgchinhh/C-compiler.git">
+    <img src="https://img.shields.io/badge/Language-C%2B%2B-blue.svg" alt="Language"/>
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"/>
+  </a>
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-orange" alt="Platform"/>
+  <a href="https://github.com/trgchinhh">
+    <img src="https://img.shields.io/badge/Author-Tr%C6%B0%E1%BB%9Dng%20Chinh-yellow" alt="Author"/>
+  </a>
+</p>
+
+
 # C-compiler
 
 Chương trình này là công cụ biên dịch nhiều file.cpp trong thư mục `src`, biên dịch nhanh và tiện lợi không cần phải nhớ lệnh hay gõ tay nhiều lần. Công cụ này giống như Makefile nhưng nó cơ bản và dễ dùng hơn. Tiện cho người chưa tiếp xúc với Makefile. Công cụ có những điểm hay như cho biết thông tin trình dịch, nếu file có thay đổi mới biên dịch còn không thay đổi thì cho chạy thẳng file thực thi, không biên dịch lại tránh mất thời gian. Công cụ hỗ trợ trình biên dịch Gcc và Clang trên hệ điều hành Windows và Linux
