@@ -13,17 +13,30 @@
                                          - Github: https://github.com/trgchinhh
 */
 
-#include <fileapi.h>
+#ifdef _WIN32               // Nếu là Windows 
+    #define NOMINMAX
+    #include <windows.h>
+    #include <conio.h>
+#else                       // Nếu là Linux hoặc HDH khác
+    #include <sys/ioctl.h>
+    #include <unistd.h> 
+    #include <termios.h>
+#endif
+
 #include <iostream>
+#include <exception>
+#include <stdexcept>
 #include <filesystem>
+#include <thread>
+#include <atomic>
+#include <chrono>
 #include <fstream>
-#include <fstream>
-#include <iterator>
-#include <cstdlib>
-#include <windows.h>
+#include <sstream>
 
 using namespace std;
 using namespace filesystem;
+using namespace chrono;
+using namespace this_thread;
 
 #define RESET   "\033[0m"
 #define RED     "\033[91m"
@@ -35,6 +48,7 @@ const string thumuc_chuacodemacdinh = "src";
 const string thumuc_chuafileexemacdinh = "bin";
 const string ten_fileexemacdinh = "main";
 string duongdan_fileexe = thumuc_chuafileexemacdinh + "\\"; 
+atomic<bool> batdauspinner(false);
 
 int LayChieuRongTerminal(){
     CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -70,7 +84,7 @@ void InBanner(){
     while (getline(ss, line)) {
         InGiuaTerminal(line, RESET);
         cout << endl;
-        Sleep(10);
+        Sleep(0);
     }
 }
 
@@ -89,7 +103,8 @@ void NhapTenFileExe(string& tenfileexe){
 bool TimFileExe() {
     try {
         for (const auto &file : std::filesystem::directory_iterator(thumuc_chuafileexemacdinh)) {
-            if (file.path().extension() == ".cpp") {
+            if (file.path().extension() == ".c" 
+             || file.path().extension() == ".cpp") {
                 return true;
             }
         }
@@ -100,11 +115,40 @@ bool TimFileExe() {
     return true;
 }
 
-void ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
+bool CanBienDich() {
+    if(!exists(duongdan_fileexe))
+        return true;
+    auto thoigiandichexe = last_write_time(duongdan_fileexe);
+    for(auto &file : recursive_directory_iterator(thumuc_chuacodemacdinh)){
+        if(file.path().extension() == ".cpp" 
+        || file.path().extension() == ".h"
+        || file.path().extension() == ".c"
+        || file.path().extension() == ".hpp"){
+            if(last_write_time(file) > thoigiandichexe)
+                return true;
+        }
+    }
+    return false;
+}
+
+bool KiemTraKetQuaBienDich(string lenhbiendich){
+    batdauspinner = true;
+    int ketqua = system(lenhbiendich.c_str());
+    if(ketqua != 0){
+        return false;
+    }
+    return true;
+}
+
+void ChayChuongTrinh(string tenfileexe, string duongdanfileexe){
+    system("cls");
+    system(duongdanfileexe.c_str()); 
+}
+
+bool ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
     cout << "\t(-)" << " Đang biên dịch chương trình! Vui lòng chờ ...";
     cout << "\n\t │\n";
     cout << "\t │    ┌─────── " << YELLOW << "Thông tin trình dịch" << RESET << " ─────┐" << endl;
-
     struct CppVersion { 
         long long value; 
         const char* name; 
@@ -124,7 +168,6 @@ void ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
             break;
         }
     }
-
     string lenhbiendich = "";
     #ifdef _MSC_VER
         lenhbiendich = "cl ";
@@ -133,28 +176,22 @@ void ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
     #elif __clang__
         lenhbiendich = "clang++ ";
     #endif
-
     lenhbiendich += thumuc_chuacodemacdinh + "\\*.cpp ";
-
     #ifdef _MSC_VER
         lenhbiendich += "/FE ";
     #else
         lenhbiendich += "-o ";
     #endif
-
     #ifdef __WIN32 
         tenfileexe = tenfileexe + ".exe";
     #endif
     lenhbiendich += thumuc_chuafileexemacdinh + "\\" + tenfileexe;
     string duongdanfileexe = thumuc_chuafileexemacdinh + "\\" + tenfileexe; 
-
     if (cpp_val <= cppvs[0].value) {
-        cerr << RED << "(!) Trình biên dịch quá cũ, yêu cầu C++11 trở lên!" << RESET << endl;
-        return;  
+        cout << RED << "(!) Trình biên dịch quá cũ, yêu cầu C++11 trở lên!" << RESET << endl;
+        return false;  
     }
-
     if (cpp_val > cppvs[4].value) cpp_name = "C++ mới hơn C++20";
-
     #ifdef _MSC_VER
              cout << "\t │    ├ " << RESET << YELLOW << "(+)" 
                   << " Trình biên dịch: " << RESET << "MSVC" << endl;
@@ -163,7 +200,9 @@ void ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
              cout << "\t      ├ " << RESET << YELLOW << "(+)" 
                   << " Bản chuẩn: " << RESET << cpp_name << " (" << cpp_val << ")" << endl;
              cout << "\t      └──────────────────────────────────┘" << endl;
-        system(lenhbiendich.c_str());
+        if(!KiemTraKetQuaBienDich(lenhbiendich)){
+            return false;
+        }
     #elif __GNUC__
              cout << "\t │    ├ " << RESET << YELLOW << "(+)" << " Trình biên dịch: " 
                   << RESET << "GCC / MinGW" << endl;
@@ -172,7 +211,9 @@ void ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
              cout << "\t      ├ " << RESET << YELLOW << "(+)" << " Bản chuẩn: " 
                   << RESET << cpp_name << " (" << cpp_val << ")" << endl;
              cout << "\t      └──────────────────────────────────┘" << endl;
-        system(lenhbiendich.c_str());
+        if(!KiemTraKetQuaBienDich(lenhbiendich)){
+            return false;
+        }
     #elif __clang__
              cout << "\t │    ├ " << RESET << YELLOW << "(+)" 
                   << " Trình biên dịch: " << RESET << "CLANG" << endl;
@@ -181,23 +222,163 @@ void ChuanDoanTrinhDichVaBienDichFile(string tenfileexe){
              cout << "\t      ├ " << RESET << YELLOW << "(+)" << " Bản chuẩn: " 
                   << RESET << cpp_name << " (" << cpp_val << ")" << endl;
              cout << "\t      └──────────────────────────────────┘" << endl;
-        system(lenhbiendich.c_str());
+        if(!KiemTraKetQuaBienDich(lenhbiendich)){
+            return false;
+        }
     #else 
         cout << RED << "\t(!)  Trình biên dịch không được hỗ trợ !!!" << endl;
-        return -1;
+        return false;
     #endif 
+    // cout << "\n\t(?) Đã biên dịch xong, chạy file: " << tenfileexe << " (y/n): ";
+    // char c; cin >> c;
+    // if(c == 'y' || c == 'Y'){
+    //     ChayChuongTrinh(tenfileexe, duongdanfileexe);
+    // }
+    return true;
+}
 
-
-    cout << "\n\t(?) Đã biên dịch xong, chạy file: " << tenfileexe << " (y/n): ";
-    char c; cin >> c;
-    if(c == 'y' || c == 'Y'){
+void XoaManHinh(){
+    #ifdef _WIN32 
         system("cls");
-        system(duongdanfileexe.c_str()); 
-    } 
+    #else 
+        system("clear");
+    #endif
+}
+
+void AnConTroChuot(bool trangthaicontrochuot){
+    #ifdef _WIN32
+        HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        CONSOLE_CURSOR_INFO cursorInfo;
+        GetConsoleCursorInfo(hConsole, &cursorInfo);
+        cursorInfo.bVisible = trangthaicontrochuot;
+        SetConsoleCursorInfo(hConsole, &cursorInfo);
+    #else
+        if (trangthaicontrochuot) cout << "\033[?25h"; 
+        else cout << "\033[?25l";
+    #endif
+}
+
+void HieuUngSpinner(atomic<bool>& dung){
+    while(!batdauspinner && !dung){
+        sleep_for(milliseconds(10));
+    }
+    AnConTroChuot(false);
+    const char* spinner[] = {"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"};
+    int i = 0;
+    while(!dung){
+        cout << "\r" << spinner[i] 
+             << RESET << " Vui lòng chờ biên dịch" << flush;
+        i = (i + 1) % 10;
+        sleep_for(milliseconds(100));
+    }
+    cout << "\r                                             \r";
+    AnConTroChuot(true);
+}
+
+int DocPhimNguoiDung() {
+    #ifdef _WIN32
+        int c = _getch();
+        if (c == 0 || c == 224) {
+            switch (_getch()) {
+                case 72: return 72; 
+                case 80: return 80; 
+                case 75: return 75; 
+                case 77: return 77; 
+            }
+        }
+        if (c == 13) 
+            return 13;
+        return c;
+    #else
+        termios oldt, newt;
+        tcgetattr(STDIN_FILENO, &oldt);
+        newt = oldt;
+        newt.c_lflag &= ~(ICANON | ECHO);
+        newt.c_cc[VMIN]  = 1;
+        newt.c_cc[VTIME] = 0;
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+        int c = getchar();
+        if (c == 27) {
+            int c1 = getchar();
+            if (c1 == '[') {
+                int c2 = getchar();
+                switch (c2) {
+                    case 'A': c = 72; break; 
+                    case 'B': c = 80; break; 
+                    case 'C': c = 77; break; 
+                    case 'D': c = 75; break; 
+                }
+            }
+        }
+        if (c == 10) 
+            c = 13;
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+        return c;
+    #endif
+}
+
+int DoRongHienThi(const char* s){
+    int chieurong = 0;
+    for(int i = 0; s[i] != '\0'; ){
+        unsigned char c = s[i];
+        if(c < 128){ 
+            chieurong += 1; i += 1; 
+        } else{ 
+            chieurong += 1; 
+            i += 2; 
+        }
+    }
+    return chieurong;
+}
+
+void Menu(string tenfileexe, string duongdanfileexe){
+    const int somuc = 2;
+    const char* menu[somuc] = {
+        "Chạy file",
+        "Thoát"
+    };
+    int chon = 0;
+    while(true){
+        XoaManHinh();
+        InBanner();
+        cout << "Không có thay đổi -> dùng file build cũ" << RESET << endl;
+        cout << "┌───────────────┐" << RESET << endl;
+
+        for (int i = 0; i < somuc; i++) {
+            if (i == chon) {
+                cout << "│" << RED << " ● " << RESET << menu[i];
+                int spaces = 12 - DoRongHienThi(menu[i]);
+                cout << RESET << string(spaces, ' ') << "│" << endl;
+            } else {
+                cout << "│   " << menu[i];
+                int spaces = 12 - DoRongHienThi(menu[i]);
+                cout << RESET << string(spaces, ' ') << "│" << endl;
+            }
+        }
+        cout << "└───────────────┘" << RESET << "\n";
+        int phim = DocPhimNguoiDung();
+        if (phim == 72) 
+            chon = (chon - 1 + somuc) % somuc;
+        else if (phim == 80)
+            chon = (chon + 1) % somuc;
+        else if (phim == 13) {
+            if(chon == 0){
+                ChayChuongTrinh(tenfileexe, duongdanfileexe);
+                AnConTroChuot(true);
+                exit(0);
+            } 
+            else if(chon == 1){
+                AnConTroChuot(true);
+                exit(0);
+            }
+        }
+    }
 }
 
 int main(){
     system("cls");
+    AnConTroChuot(false);
+
     SetConsoleOutputCP(65001); 
     SetConsoleCP(65001);
 
@@ -208,20 +389,46 @@ int main(){
         cout << "(!) Chưa tồn tại thư mục bin. Đang tạo ..." << endl;
         create_directories(thumuc_chuafileexemacdinh);
         NhapTenFileExe(tenfileexe);
-    } 
-    if(!exists(duongdan_fileexe)){
-        cout << "(!) Chưa tồn tại file " << duongdan_fileexe << ". Đang tạo ..." << endl;
-        create_directories(duongdan_fileexe);
-    }
-
-    cout << "(!) Tìm thấy file cần biên dịch: ";
-    if(!TimFileExe()){
-        cout << RED << "Không" << RESET << endl;
     } else {
-        cout << GREEN <<"Có" << RESET << endl;
+        for(const auto& file : directory_iterator(thumuc_chuafileexemacdinh)){
+            if(file.path().extension() == ".exe"){
+                tenfileexe = file.path().stem().string();
+                break;
+            }
+        }
+        if(tenfileexe.empty()){
+            tenfileexe = ten_fileexemacdinh;
+        }
+    }
+    duongdan_fileexe = thumuc_chuafileexemacdinh + "\\" + tenfileexe;
+    #ifdef __WIN32
+        duongdan_fileexe += ".exe";
+    #endif 
+    if(CanBienDich()){
+        cout << "(!) Tìm thấy file cần biên dịch: ";
+        if(!TimFileExe()){
+            cout << RED << "Không" << RESET << endl;
+        } else {
+            cout << GREEN <<"Có" << RESET << endl;
+        }
+        atomic<bool> stop(false);
+        thread loading(HieuUngSpinner, ref(stop));
+        int ketqua = ChuanDoanTrinhDichVaBienDichFile(tenfileexe);
+        stop = true;
+        loading.join();
+        if(!ketqua){
+            throw runtime_error(RED "Biên dịch thất bại !");
+        }
+        cout << "Biên dịch thành công !" << endl;
+        cout << "\n\t(?) Đã biên dịch xong, chạy file: " << tenfileexe << " (y/n): ";
+        char c; cin >> c;
+        if(c == 'y' || c == 'Y'){
+            ChayChuongTrinh(tenfileexe, duongdan_fileexe);
+        }
+    } else {
+        Menu(tenfileexe, duongdan_fileexe);
     }
 
-    ChuanDoanTrinhDichVaBienDichFile(tenfileexe);
-
+    AnConTroChuot(true);
     return 0;
 }
